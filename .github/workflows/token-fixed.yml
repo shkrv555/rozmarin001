@@ -1,0 +1,43 @@
+name: 🚀 Auto Sync - Token Fixed
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Admin Repo
+        uses: actions/checkout@v4
+
+      - name: 🔄 Sync to Customer Repo
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          echo "🔄 Starting sync process..."
+          
+          # Customer repo-nu KLONLA (TOKEN FIX)
+          git clone https://$SYNC_TOKEN@github.com/shkrv555/rozmarin00.git customer-repo
+          
+          echo "✅ Customer repo cloned"
+          
+          # Faylları kopyala
+          echo "📁 Copying files..."
+          cp -f index.html customer-repo/ 2>/dev/null || echo "⚠️ index.html not found"
+          [ -d "photos" ] && cp -r photos customer-repo/ || echo "⚠️ photos not found"
+          
+          # Commit et və PUSH et
+          cd customer-repo
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          git add .
+          if git diff --staged --quiet; then
+            echo "✅ No changes to commit"
+          else
+            git commit -m "🔄 Auto-sync: $(date +'%Y-%m-%d %H:%M:%S')"
+            git push origin main
+            echo "🎉 Successfully synced to customer repo!"
+          fi
