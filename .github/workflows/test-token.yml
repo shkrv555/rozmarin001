@@ -1,0 +1,60 @@
+name: 🔧 Test SYNC_TOKEN
+
+on:
+  workflow_dispatch:  # Manual işə salmaq üçün
+
+jobs:
+  test-token:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔍 Test SYNC_TOKEN Access
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          echo "🧪 Token testi başladı..."
+          echo "=========================================="
+          
+          # 1. Tokenin boş olmadığını yoxla
+          if [ -z "$SYNC_TOKEN" ]; then
+            echo "❌ XƏTA: SYNC_TOKEN BOŞDUR!"
+            echo "Zəhmət olmasa Settings → Secrets → Actions bölməsində SYNC_TOKEN əlavə edin"
+            exit 1
+          else
+            echo "✅ SYNC_TOKEN dəyəri var (gizlidir)"
+          fi
+          
+          # 2. Token ilə repo-ya girişi yoxla
+          echo "🔐 Repository-ə girişi yoxlayıram..."
+          if git ls-remote "https://$SYNC_TOKEN@github.com/shkrv555/rozmarin00.git" >/dev/null 2>&1; then
+            echo "✅ UGUR! Token ilə repository-ə giriş mümkündür"
+          else
+            echo "❌ XƏTA: Token ilə repository-ə giriş MÜMKÜN DEYİL"
+            echo "Səbəblər:"
+            echo "  - Token səhvdir"
+            echo "  - Token icazələri yoxdur"
+            echo "  - Repository adı səhvdir"
+            exit 1
+          fi
+          
+          # 3. Yazma icazəsini yoxla
+          echo "📝 Yazma icazəsini yoxlayıram..."
+          TEMP_DIR=$(mktemp -d)
+          cd "$TEMP_DIR"
+          git clone "https://$SYNC_TOKEN@github.com/shkrv555/rozmarin00.git" test-write
+          cd test-write
+          
+          echo "test: $(date)" > test-file.txt
+          git add test-file.txt
+          git config user.name "GitHub Actions Test"
+          git config user.email "test@github.com"
+          
+          if git commit -m "Test write access" && git push; then
+            echo "✅ UGUR! Token ilə yazma icazəsi VAR"
+          else
+            echo "❌ XƏTA: Token ilə yazma icazəsi YOXDUR"
+            exit 1
+          fi
+          
+          echo "=========================================="
+          echo "🎉 TƏBRİKLƏR! TOKEN TAM İŞLƏYİR!"
+          echo "=========================================="
