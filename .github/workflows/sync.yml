@@ -1,0 +1,51 @@
+
+name: 🚀 Auto Sync to Customer Site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Admin Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔄 Sync to Customer Repo
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          echo "🔄 Sync başladı..."
+          
+          # Customer repo-nu klonla
+          git clone https://$SYNC_TOKEN@github.com/shkrv555/rozmarin00.git customer-repo
+          
+          echo "✅ Customer repo klonlandı"
+          
+          # Admin-dən customer-ə faylları kopyala
+          echo "📁 Faylları kopyalayıram..."
+          cp -f index.html customer-repo/ || echo "⚠️ index.html kopyalanmadı"
+          [ -d "photos" ] && cp -rf photos/ customer-repo/ || echo "⚠️ photos qovluğu yoxdur"
+          [ -d "css" ] && cp -rf css/ customer-repo/ || echo "⚠️ css qovluğu yoxdur"
+          [ -d "js" ] && cp -rf js/ customer-repo/ || echo "⚠️ js qovluğu yoxdur"
+          [ -d "images" ] && cp -rf images/ customer-repo/ || echo "⚠️ images qovluğu yoxdur"
+          
+          # Dəyişiklikləri commit et
+          cd customer-repo
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          git add .
+          if git diff-index --quiet HEAD --; then
+            echo "✅ Heç bir dəyişiklik yoxdur"
+          else
+            git commit -m "🔄 Auto-sync: $(date +'%Y-%m-%d %H:%M:%S')"
+            git push
+            echo "🎉 Dəyişikliklər customer repo-ya göndərildi!"
+          fi
+          
+          echo "✅ Sync tamamlandı!"
